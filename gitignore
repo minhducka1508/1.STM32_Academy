@@ -1,0 +1,20 @@
+# STM32CubeIDE
+.settings/
+*.launch
+*.mxproject
+*.ioc
+
+# Build
+Debug/
+Release/
+
+# Keil uVision
+*.uvguix.*
+*.uvoptx
+*.uvprojx
+
+# Generated
+*.elf
+*.hex
+*.bin
+*.map

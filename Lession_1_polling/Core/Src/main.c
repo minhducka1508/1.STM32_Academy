@@ -18,7 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include "app_led.h"
+#include "app_button.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -54,10 +55,6 @@ static void MX_GPIO_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-#define LED_PORT		GPIOA
-#define LED_PIN			GPIO_PIN_5
-void blink_led_blocking(GPIO_TypeDef *led_port, uint16_t led_pin);
-void blink_led_non_blocking(GPIO_TypeDef *led_port, uint16_t led_pin, uint32_t period, uint32_t on_duration);
 /* USER CODE END 0 */
 
 /**
@@ -98,84 +95,18 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	blink_led_non_blocking(LED_PORT, LED_PIN, 1000, 500);
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
-}
-
-void blink_led_blocking(GPIO_TypeDef *led_port, uint16_t led_pin)
-{
-	HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_SET);
-	HAL_Delay(100);
-	HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_RESET);
-	HAL_Delay(100);
-}
-
-void blink_led_non_blocking(GPIO_TypeDef *led_port, uint16_t led_pin, uint32_t period, uint32_t on_duration)
-{
-	static uint32_t last_change = 0;
-	static uint8_t led_state = 0;
-
-	uint32_t now = HAL_GetTick();
-
-	if (led_state == 0)
+	if (debounce_button(&btn_1) == 1)
 	{
-		if (now - last_change >= on_duration)
-		{
-			HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_SET);
-			led_state = 1;
-			last_change = now;
-		}
+		// HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
+		blink_led_non_blocking(LED_PORT, LED_PIN, 1000, 500);
 	}
 	else
 	{
-		if ((now - last_change) >= (period - on_duration))
-		{
-			HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_RESET);
-			led_state = 0;
-			last_change = now;
-		}
+		HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);
 	}
-}
-
-typedef struct
-{
-	GPIO_TypeDef *port;
-	uint16_t pin;
-	uint32_t time_change;
-	uint32_t stable_state;
-} button_t;
-
-bool read_button_polling(button_t *btn)
-{
-	bool state_press = false;
-	if (HAL_GPIO_ReadPin(btn->port, btn->pin) == GPIO_PIN_SET)
-	{
-		state_press = true;
-	}
-
-	return state_press;
-}
-
-#define TIMEOUT_DEBOUNCE_BTN_MS (20)
-
-bool debounce_button(button_t *btn)
-{
-	uint32_t time_now = HAL_GetTick();
-	bool press_present = read_button_polling(btn);
-
-	if (press_present != btn->stable_state)
-	{
-		btn->time_change = time_now;
-	}
-
-	if (time_now - btn->time_change >= TIMEOUT_DEBOUNCE_BTN_MS)
-	{
-		btn->stable_state = press_present;
-	}
-
-	return btn->stable_state;
+    /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE END 3 */
 }
 
 /**
@@ -232,22 +163,23 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PC13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA5 */
   GPIO_InitStruct.Pin = GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
