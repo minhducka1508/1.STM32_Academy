@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "app_exti.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -54,10 +55,6 @@ static void MX_GPIO_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-#define LED_PORT		GPIOA
-#define LED_PIN			GPIO_PIN_5
-void blink_led_blocking(GPIO_TypeDef *led_port, uint16_t led_pin);
-void blink_led_non_blocking(GPIO_TypeDef *led_port, uint16_t led_pin, uint32_t period, uint32_t on_duration);
 /* USER CODE END 0 */
 
 /**
@@ -97,102 +94,20 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
+	  if (btn_event_flag == BTN_EVENT_SHORT)
+	  {
+		  // HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
+		  blink_led_non_blocking(LED_PORT, LED_PIN, 1000, 500);
+	  }
+	  else if (btn_event_flag == BTN_EVENT_LONG)
+	  {
+		  // HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);
+		  blink_led_non_blocking(LED_PORT, LED_PIN, 1000, 100);
+	  }
   }
   /* USER CODE END 3 */
 }
 
-void blink_led_blocking(GPIO_TypeDef *led_port, uint16_t led_pin)
-{
-	HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_SET);
-	HAL_Delay(100);
-	HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_RESET);
-	HAL_Delay(100);
-}
-
-void blink_led_non_blocking(GPIO_TypeDef *led_port, uint16_t led_pin, uint32_t period, uint32_t on_duration)
-{
-	static uint32_t last_change = 0;
-	static uint8_t led_state = 0;
-
-	uint32_t now = HAL_GetTick();
-
-	if (led_state == 0)
-	{
-		if (now - last_change >= on_duration)
-		{
-			HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_SET);
-			led_state = 1;
-			last_change = now;
-		}
-	}
-	else
-	{
-		if ((now - last_change) >= (period - on_duration))
-		{
-			HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_RESET);
-			led_state = 0;
-			last_change = now;
-		}
-	}
-}
-
-typedef enum
-{
-	BTN_EVENT_NONE = 0,
-	BTN_EVENT_SHORT,
-	BTN_EVENT_LONG
-} btn_event_t;
-
-typedef struct
-{
-	GPIO_TypeDef *port;
-	uint16_t pin;
-	uint32_t time_press;
-} button_t;
-
-button_t btn1 = {GPIOC, GPIO_PIN_13, 0};
-
-#define TIME_LONG_PRESS_MS 500
-btn_event_t btn_handle_irq(button_t *btn)
-{
-	if (HAL_GPIO_ReadPin(btn->port, btn->pin) == GPIO_PIN_RESET)
-	{
-		btn->time_press = HAL_GetTick();
-		return BTN_EVENT_NONE;
-	}
-	else
-	{
-		uint32_t duration = HAL_GetTick() - btn->time_press;
-		if (duration >= TIME_LONG_PRESS_MS)
-		{
-			return BTN_EVENT_LONG;
-		}
-		else
-		{
-			return BTN_EVENT_SHORT;
-		}
-	}
-}
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	if (GPIO_Pin == GPIO_PIN_13)
-	{
-		btn_event_t e = btn_handle_irq(&btn1);
-
-		if (e == BTN_EVENT_SHORT)
-		{
-			blink_led_non_blocking(LED_PORT, LED_PIN, 1000, 500);
-		}
-		else if (e == BTN_EVENT_LONG)
-		{
-			blink_led_non_blocking(LED_PORT, LED_PIN, 1000, 500);
-		}
-	}
-}
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -255,7 +170,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 

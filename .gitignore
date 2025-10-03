@@ -1,0 +1,30 @@
+# Ignore build outputs
+Debug/
+Release/
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+
+# Ignore IDE configs (STM32CubeIDE)
+.settings/
+*.launch
+*.log
+*.project
+*.cproject
+
+# Ignore temporary files
+*.swp
+*.swo
+*.tmp
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Chỉ theo dõi file .c, .h, .ioc (CubeMX)
+!*.c
+!*.h
+!*.ioc
