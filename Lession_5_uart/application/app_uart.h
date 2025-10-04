@@ -11,6 +11,8 @@ typedef enum
 	UART_TIMEOUT = 0x03U
 } uart_status_e;
 
+extern UART_HandleTypeDef huart1;
+
 uart_status_e send_message(uint8_t data, uint32_t send_time_out);
 uart_status_e recv_message(uint8_t *data, uint32_t recv_time_out);
 uart_status_e send_string(const char *str, uint32_t send_time_out);
